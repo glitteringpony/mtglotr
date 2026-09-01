@@ -183,16 +183,7 @@
   }
   .sync-box .warn{font-size:0.78rem;color:var(--mordor);margin-top:10px;}
 
-  /* print handling */
-  #print-stage{display:none;}
-  @media print{
-    body > *:not(#print-stage){display:none !important;}
-    #print-stage{
-      display:block !important;position:static;width:2.5in;height:3.5in;margin:0;padding:0;
-    }
-    #print-stage img{width:2.5in;height:3.5in;object-fit:cover;display:block;}
-    @page{margin:0;size:2.5in 3.5in;}
-  }
+  /* print handling moved to an isolated popup window (see print-btn handler in JS) */
 </style>
 </head>
 <body>
@@ -256,8 +247,6 @@
     Not planning to collect a card? Tap <b>Don't collect</b> on it — it drops off the checklist and out of the running totals. Tap <b>Not collecting (N)</b> in the toolbar any time to see everything you've set aside and bring one back.
   </footer>
 </div>
-
-<div id="print-stage"><img id="print-img" src="" alt=""></div>
 
 <div class="sync-gate hidden" id="syncGate">
   <div class="sync-box">
@@ -470,8 +459,28 @@ function buildTile(card){
   }
 
   tile.querySelector('.print-btn').addEventListener('click', () => {
-    document.getElementById('print-img').src = printImg;
-    setTimeout(() => window.print(), 60);
+    const w = window.open('', '_blank', 'width=480,height=680');
+    if(!w){
+      alert('Your browser blocked the print pop-up. Please allow pop-ups for this site and try again.');
+      return;
+    }
+    w.document.open();
+    w.document.write(
+      '<!DOCTYPE html><html><head><title>' + card.name.replace(/</g,'') + '</title><style>' +
+      '@page{margin:0;size:2.5in 3.5in;}' +
+      'html,body{margin:0;padding:0;}' +
+      'img{width:2.5in;height:3.5in;object-fit:cover;display:block;}' +
+      '</style></head><body>' +
+      '<img id="p" src="' + printImg + '">' +
+      '<script>' +
+      'var im=document.getElementById("p");' +
+      'function go(){ window.focus(); window.print(); }' +
+      'if(im.complete){ go(); } else { im.onload = go; }' +
+      'window.onafterprint = function(){ window.close(); };' +
+      '<\/script>' +
+      '</body></html>'
+    );
+    w.document.close();
   });
 
   tile.querySelector('.skip-btn').addEventListener('click', (e) => {
