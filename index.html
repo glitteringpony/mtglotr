@@ -59,10 +59,19 @@
     display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;
   }
   .controls input[type="search"]{
-    flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--line);
-    border-radius:4px;background:var(--card-bg);font-size:0.95rem;color:var(--ink);
+    flex:1;min-width:180px;padding:10px 30px 10px 12px;border:1px solid var(--line);
+    border-radius:4px;background:var(--card-bg);font-size:0.95rem;color:var(--ink);width:100%;
   }
   .controls input[type="search"]:focus{outline:2px solid var(--moss);outline-offset:1px;}
+  .controls input[type="search"]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;}
+  .search-wrap{position:relative;flex:1;min-width:180px;}
+  .clear-search-btn{
+    position:absolute;right:4px;top:50%;transform:translateY(-50%);
+    border:none;background:none;color:var(--ink-soft);font-size:1.15rem;line-height:1;
+    cursor:pointer;padding:4px 8px;display:none;
+  }
+  .clear-search-btn.visible{display:block;}
+  .clear-search-btn:hover{color:var(--mordor);}
   .toggle-btn{
     padding:10px 14px;border:1px solid var(--line);background:var(--card-bg);
     border-radius:4px;font-size:0.85rem;cursor:pointer;color:var(--ink);
@@ -177,10 +186,9 @@
   /* print handling */
   #print-stage{display:none;}
   @media print{
-    body *{visibility:hidden;}
-    #print-stage, #print-stage *{visibility:visible;}
+    body > *:not(#print-stage){display:none !important;}
     #print-stage{
-      display:block;position:fixed;top:0;left:0;width:2.5in;height:3.5in;margin:0;padding:0;
+      display:block !important;position:static;width:2.5in;height:3.5in;margin:0;padding:0;
     }
     #print-stage img{width:2.5in;height:3.5in;object-fit:cover;display:block;}
     @page{margin:0;size:2.5in 3.5in;}
@@ -203,7 +211,10 @@
   </header>
 
   <div class="controls">
-    <input type="search" id="searchBox" placeholder="Search a card by name…">
+    <div class="search-wrap">
+      <input type="search" id="searchBox" placeholder="Search a card by name…">
+      <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search">×</button>
+    </div>
     <select id="finishFilter" class="toggle-btn">
       <option value="all">All prints</option>
       <option value="hasFoil">Has a foil version</option>
@@ -649,7 +660,17 @@ async function loadCards(){
 }
 
 function initControls(){
-  document.getElementById('searchBox').addEventListener('input', applyFilters);
+  document.getElementById('searchBox').addEventListener('input', () => {
+    document.getElementById('clearSearchBtn').classList.toggle('visible', document.getElementById('searchBox').value.length > 0);
+    applyFilters();
+  });
+  document.getElementById('clearSearchBtn').addEventListener('click', () => {
+    const box = document.getElementById('searchBox');
+    box.value = '';
+    box.focus();
+    document.getElementById('clearSearchBtn').classList.remove('visible');
+    applyFilters();
+  });
   document.getElementById('finishFilter').addEventListener('change', applyFilters);
   document.getElementById('hideOwnedBtn').addEventListener('click', (e) => {
     hideOwned = !hideOwned;
